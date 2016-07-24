@@ -1,11 +1,35 @@
 import urllib.request
 import re
+import hashlib
+
+visitedURLs = {};
 
 def main():
-	local_filename, headers = urllib.request.urlretrieve('https://en.wikipedia.org/wiki/Ubuntu_(operating_system)')
+	startPage = '/wiki/Ubuntu_(operating_system)'
+	linksToVisit = [];
+	linksToVisit.append(startPage);
+	while linksToVisit:
+		linksToVisit.extend(fetchPageLinks(linksToVisit.pop(0)))
+	print('donezo');
+
+def fetchPageLinks(url):
+	wikipediaURL = 'https://en.wikipedia.org' + (url);
+	local_filename, headers = urllib.request.urlretrieve(wikipediaURL)
 	html = open(local_filename)
-	goodURLS = filterUnpleasantURLs(findEveryURLOnPage(html.read()))
-	print(','.join(goodURLS));
+	goodURLs = filterUnpleasantURLs(findEveryURLOnPage(html.read()))
+	unvisitedGoodURLs = removeRepeatURLs(goodURLs);
+	print(',\n'.join(unvisitedGoodURLs));
+	return unvisitedGoodURLs;
+
+def removeRepeatURLs(urls):
+	unvisitedURLs = [];
+	for link in urls:
+		page_name = link.split('/wiki/')[1]
+		if not visitedURLs.get(page_name, False):
+			visitedURLs[page_name] = True;
+			unvisitedURLs.append(link);
+	return unvisitedURLs;
+	
 
 def filterUnpleasantURLs(urls):
 	genericWikiPageStart = '/wiki/'
